@@ -130,10 +130,11 @@ var (
 	}
 
 	// Regex credit: https://www.socketloop.com/tutorials/golang-validate-hostname
-	rxHostname = regexp.MustCompile(`^([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*$`)
-
+	rxHostname         *regexp.Regexp
+	rxHostnameOnlyOnce sync.Once
 	// Use a regex to make sure curly brackets are balanced properly after validating it as a AURI
-	rxURITemplate = regexp.MustCompile("^([^{]*({[^}]*})?)*$")
+	rxURITemplate         *regexp.Regexp
+	rxURITemplateOnlyOnce sync.Once
 
 	rxUUID = regexp.MustCompile("^(?i)[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$")
 
@@ -300,6 +301,9 @@ func (f URIReferenceFormatChecker) IsFormat(input interface{}) bool {
 
 // IsFormat checks if input is a correctly formatted URI template per RFC6570
 func (f URITemplateFormatChecker) IsFormat(input interface{}) bool {
+	rxURITemplateOnlyOnce.Do(func() {
+		rxURITemplate = regexp.MustCompile("^([^{]*({[^}]*})?)*$")
+	})
 	asString, ok := input.(string)
 	if !ok {
 		return true
@@ -315,6 +319,9 @@ func (f URITemplateFormatChecker) IsFormat(input interface{}) bool {
 
 // IsFormat checks if input is a correctly formatted hostname
 func (f HostnameFormatChecker) IsFormat(input interface{}) bool {
+	rxHostnameOnlyOnce.Do(func() {
+		rxHostname = regexp.MustCompile(`^([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*$`)
+	})
 	asString, ok := input.(string)
 	if !ok {
 		return true
